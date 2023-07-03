@@ -6,7 +6,6 @@
  *                                                                                                *
  ************************************************************************************************ */
 
-
 /**
  * Returns the rectangle object with width and height parameters and getArea() method
  *
@@ -20,10 +19,11 @@
  *    console.log(r.height);      // => 20
  *    console.log(r.getArea());   // => 200
  */
-function Rectangle(/* width, height */) {
-  throw new Error('Not implemented');
+function Rectangle(width, height) {
+  this.width = width;
+  this.height = height;
+  this.getArea = () => this.height * this.width;
 }
-
 
 /**
  * Returns the JSON representation of specified object
@@ -35,10 +35,9 @@ function Rectangle(/* width, height */) {
  *    [1,2,3]   =>  '[1,2,3]'
  *    { width: 10, height : 20 } => '{"height":10,"width":20}'
  */
-function getJSON(/* obj */) {
-  throw new Error('Not implemented');
+function getJSON(obj) {
+  return JSON.stringify(obj);
 }
-
 
 /**
  * Returns the object of specified type from JSON representation
@@ -51,10 +50,11 @@ function getJSON(/* obj */) {
  *    const r = fromJSON(Circle.prototype, '{"radius":10}');
  *
  */
-function fromJSON(/* proto, json */) {
-  throw new Error('Not implemented');
+function fromJSON(proto, json) {
+  const obj = JSON.parse(json);
+  const val = Object.values(obj);
+  return new proto.constructor(...val);
 }
-
 
 /**
  * Css selectors builder
@@ -111,35 +111,125 @@ function fromJSON(/* proto, json */) {
  */
 
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+  usedPClass: '',
+  usedId: '',
+  usedClass: '',
+  usedAttr: '',
+  usedElement: '',
+  usedPElement: '',
+
+  element(value) {
+    if (this.usedElement) {
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector',
+      );
+    }
+    if (
+      this.usedId
+      || this.usedClass
+      || this.usedAttr
+      || this.usedPClass
+      || this.usedPElement
+    ) {
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element',
+      );
+    }
+    const obj = {};
+    Object.assign(obj, this);
+    obj.usedElement = value;
+    return obj;
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  id(value) {
+    if (this.usedId) {
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector',
+      );
+    }
+    if (
+      this.usedClass
+      || this.usedAttr
+      || this.usedPClass
+      || this.usedPElement
+    ) {
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element',
+      );
+    }
+    const obj = {};
+    Object.assign(obj, this);
+    obj.usedId = `#${value}`;
+    return obj;
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  class(value) {
+    if (this.usedAttr || this.usedPClass || this.usedPElement) {
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element',
+      );
+    }
+    const obj = {};
+    Object.assign(obj, this);
+    obj.usedClass += `.${value}`;
+    return obj;
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  attr(value) {
+    if (this.usedPClass || this.usedPElement) {
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element',
+      );
+    }
+    const obj = {};
+    Object.assign(obj, this);
+    obj.usedAttr = `[${value}]`;
+    return obj;
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  pseudoClass(value) {
+    if (this.usedPElement) {
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element',
+      );
+    }
+    const obj = {};
+    Object.assign(obj, this);
+    obj.usedPClass += `:${value}`;
+    return obj;
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  pseudoElement(value) {
+    if (this.usedPElement) {
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector',
+      );
+    }
+    const obj = {};
+    Object.assign(obj, this);
+    obj.usedPElement = `::${value}`;
+    return obj;
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  combine(selector1, combinator, selector2) {
+    const obj = {};
+    obj.stringify = this.stringify;
+    obj.str = `${selector1.stringify()} ${combinator} ${selector2.stringify()}`;
+    return obj;
+  },
+
+  stringify() {
+    if (this.str !== undefined) return this.str;
+    return (
+      this.usedElement
+      + this.usedId
+      + this.usedClass
+      + this.usedAttr
+      + this.usedPClass
+      + this.usedPElement
+    );
   },
 };
-
 
 module.exports = {
   Rectangle,
